@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FiveM AI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✻</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<style>
+:root{--bg:#faf9f5;--side:#f3f1ea;--panel:#fff;--text:#1f1e1d;--mute:#73726c;--line:#e6e3d8;--acc:#c96442;--code:#f0eee6}
+@media(prefers-color-scheme:dark){:root{--bg:#262624;--side:#1f1e1d;--panel:#30302e;--text:#eeede8;--mute:#9c9a92;--line:#3d3d3a;--code:#1f1e1d}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.7 system-ui,"Segoe UI",Tahoma,sans-serif;display:flex}
+aside{width:270px;background:var(--side);border-inline-end:1px solid var(--line);display:flex;flex-direction:column;padding:14px;gap:8px}
+.brand{font:600 22px Georgia,serif;display:flex;gap:8px;align-items:center;padding:6px 8px 12px}.brand b{color:var(--acc);font-size:26px}
+button{font:inherit;cursor:pointer;color:inherit}
+#new{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;text-align:start}
+#list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:2px}
+#list div{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;justify-content:space-between;gap:6px}
+#list div:hover,#list .on{background:var(--line)}#list i{font-style:normal;color:var(--mute)}
+main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+#top{display:none;padding:10px 14px}#top button{background:none;border:0;font-size:22px}
+#msgs{flex:1;overflow:auto;padding:24px 16px}
+.w{max-width:760px;margin:auto}
+.hello{text-align:center;margin-top:14vh}.hello b{color:var(--acc);font-size:48px}.hello h1{font:400 34px Georgia,serif;margin:8px 0}.hello p{color:var(--mute)}
+.msg{margin:0 0 22px}
+.user{background:var(--side);border:1px solid var(--line);border-radius:16px;padding:10px 16px;width:fit-content;max-width:85%;white-space:pre-wrap;margin-inline-start:auto;unicode-bidi:plaintext}
+.bot{font-family:Georgia,"Segoe UI",Tahoma,serif;unicode-bidi:plaintext}
+.bot p{margin:.4em 0}.bot pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;direction:ltr;text-align:left;position:relative;font-size:13.5px;line-height:1.55}
+.bot code{font-family:ui-monospace,Consolas,monospace;font-size:.9em}.bot :not(pre)>code{background:var(--code);padding:1px 5px;border-radius:5px}
+.cp{position:absolute;top:6px;right:6px;background:var(--panel);border:1px solid var(--line);border-radius:6px;font-size:12px;padding:2px 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.chips img{height:56px;border-radius:8px}.chip{background:var(--line);border-radius:8px;padding:2px 8px;font-size:13px}
+#bar{padding:0 16px 16px}
+#box{max-width:760px;margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:10px 12px;box-shadow:0 2px 12px #0000000d}
+#in{width:100%;border:0;outline:0;resize:none;background:none;color:inherit;font:inherit;max-height:200px;unicode-bidi:plaintext}
+#row{display:flex;justify-content:space-between;align-items:center}
+.ic{background:none;border:1px solid var(--line);border-radius:10px;width:36px;height:36px;font-size:18px}
+#send{background:var(--acc);border:0;color:#fff;border-radius:10px;width:36px;height:36px;font-size:18px}#send:disabled{opacity:.4}
+#pend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.note{text-align:center;color:var(--mute);font-size:12px;margin-top:8px}
+@media(max-width:760px){aside{position:fixed;inset:0 auto 0 0;z-index:5;transform:translateX(-100%);transition:.2s}aside.open{transform:none}#top{display:block}[dir=rtl] aside{inset:0 0 0 auto;transform:translateX(100%)}[dir=rtl] aside.open{transform:none}}
+</style>
+</head>
+<body>
+<aside id="side">
+  <div class="brand"><b>✻</b> FiveM AI</div>
+  <button id="new">+ محادثة جديدة</button>
+  <div id="list"></div>
+</aside>
+<main>
+  <div id="top"><button onclick="side.classList.toggle('open')">☰</button></div>
+  <div id="msgs"><div class="w" id="chat"></div></div>
+  <div id="bar">
+    <div id="box">
+      <div id="pend"></div>
+      <textarea id="in" rows="1" placeholder="اسألني عن سكربتات FiveM، أو ارفع ملف/صورة..."></textarea>
+      <div id="row">
+        <button class="ic" id="att" title="رفع ملفات">📎</button>
+        <button id="send" title="إرسال">↑</button>
+      </div>
+      <input type="file" id="file" multiple hidden accept="image/*,.lua,.js,.json,.txt,.cfg,.sql,.html,.css,.md,.xml,.yml,.yaml,.py,.ts,.csv,.log,.ini">
+    </div>
+    <div class="note">FiveM AI قد يغلط، راجع الكود قبل ما تشغله على السيرفر.</div>
+  </div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+let chats=[];try{chats=JSON.parse(localStorage.fivem||"[]")}catch(e){}
+let cur=null,pending=[],busy=false;
+const save=()=>{try{localStorage.fivem=JSON.stringify(chats.map(c=>({...c,messages:c.messages.map(m=>({role:m.role,content:m.content,files:m.files,nimg:(m.images||[]).length||m.nimg}))})))}catch(e){}};
+const cap=document.createElement("div");
+function esc(t){cap.textContent=t;return cap.innerHTML}
+function renderList(){
+  $("#list").innerHTML="";
+  chats.slice().reverse().forEach(c=>{
+    const d=document.createElement("div");d.className=c.id===cur?"on":"";
+    d.innerHTML=`<span>${esc(c.title)}</span><i title="حذف">✕</i>`;
+    d.onclick=e=>{if(e.target.tagName==="I"){chats=chats.filter(x=>x.id!==c.id);if(cur===c.id)cur=null;save();}else cur=c.id;renderList();renderChat();$("#side").classList.remove("open")};
+    $("#list").append(d);
+  });
+}
+function md(t){const h=DOMPurify.sanitize(marked.parse(t,{breaks:true}));return h}
+function addCopy(el){el.querySelectorAll("pre").forEach(p=>{if(p.querySelector(".cp"))return;const b=document.createElement("button");b.className="cp";b.textContent="نسخ";b.onclick=()=>{navigator.clipboard.writeText(p.querySelector("code")?.innerText||p.innerText);b.textContent="تم ✓";setTimeout(()=>b.textContent="نسخ",1200)};p.append(b)})}
+function msgEl(m){
+  const d=document.createElement("div");d.className="msg";
+  if(m.role==="user"){
+    const u=document.createElement("div");u.className="user";u.textContent=m.content;
+    const ch=document.createElement("div");ch.className="chips";
+    (m.images||[]).forEach(src=>{const i=new Image();i.src=src;ch.append(i)});
+    if(!m.images?.length&&m.nimg)ch.innerHTML+=`<span class="chip">🖼 ${m.nimg} صورة</span>`;
+    (m.files||[]).forEach(f=>ch.innerHTML+=`<span class="chip">📄 ${esc(f)}</span>`);
+    if(ch.children.length)u.append(ch);d.append(u);
+  }else{d.className="msg bot";d.innerHTML=md(m.content);addCopy(d)}
+  return d;
+}
+function renderChat(){
+  const c=chats.find(x=>x.id===cur),box=$("#chat");box.innerHTML="";
+  if(!c||!c.messages.length){box.innerHTML=`<div class="hello"><b>✻</b><h1>أهلاً بيك في FiveM AI</h1><p>اطلب سكربت، صلّح كود، أو ارفع ملف وأشرحلك ياه.</p></div>`;return}
+  c.messages.forEach(m=>box.append(msgEl(m)));scroll();
+}
+const scroll=()=>{$("#msgs").scrollTop=$("#msgs").scrollHeight};
+function shrink(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,1280/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=img.width*k;c.height=img.height*k;c.getContext("2d").drawImage(img,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.8))};img.src=r.result};r.readAsDataURL(file)})}
+$("#att").onclick=()=>$("#file").click();
+$("#file").onchange=async e=>{
+  for(const f of e.target.files){
+    if(f.type.startsWith("image/"))pending.push({type:"img",name:f.name,data:await shrink(f)});
+    else if(f.size>300000)alert(f.name+" كبير (الحد 300KB للملفات النصية)");
+    else pending.push({type:"txt",name:f.name,data:await f.text()});
+  }
+  e.target.value="";renderPend();
+};
+function renderPend(){$("#pend").innerHTML="";pending.forEach((p,i)=>{const s=document.createElement("span");s.className="chip";s.textContent=(p.type==="img"?"🖼 ":"📄 ")+p.name+" ✕";s.style.cursor="pointer";s.onclick=()=>{pending.splice(i,1);renderPend()};$("#pend").append(s)})}
+function apiMsgs(c){
+  const last=c.messages.length-1;
+  return c.messages.map((m,i)=>{
+    if(m.role!=="user")return{role:"assistant",content:m.content};
+    let t=m.content+(m.fileText||"");
+    if(i===last&&m.images?.length)return{role:"user",content:[{type:"text",text:t||"اشرح الصورة"},...m.images.map(u=>({type:"image_url",image_url:{url:u}}))]};
+    return{role:"user",content:t};
+  });
+}
+async function send(){
+  const text=$("#in").value.trim();if(busy||(!text&&!pending.length))return;
+  let c=chats.find(x=>x.id===cur);
+  if(!c){c={id:Date.now(),title:(text||pending[0].name).slice(0,40),messages:[]};chats.push(c);cur=c.id}
+  const imgs=pending.filter(p=>p.type==="img"),txts=pending.filter(p=>p.type==="txt");
+  c.messages.push({role:"user",content:text,images:imgs.map(p=>p.data),files:txts.map(p=>p.name),fileText:txts.map(p=>`\n\n[File: ${p.name}]\n\`\`\`\n${p.data}\n\`\`\``).join("")});
+  pending=[];renderPend();$("#in").value="";$("#in").style.height="auto";
+  const bot={role:"assistant",content:""};c.messages.push(bot);renderList();renderChat();
+  const el=$("#chat").lastChild;el.className="msg bot";el.textContent="...";
+  busy=true;$("#send").disabled=true;
+  try{
+    const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:apiMsgs({messages:c.messages.slice(0,-1)}),vision:imgs.length>0})});
+    if(!r.ok)throw new Error((await r.text()).slice(0,300));
+    const rd=r.body.getReader(),dec=new TextDecoder();let buf="";
+    while(true){
+      const{done,value}=await rd.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});const lines=buf.split("\n");buf=lines.pop();
+      for(const l of lines){if(!l.startsWith("data: ")||l.includes("[DONE]"))continue;
+        try{bot.content+=JSON.parse(l.slice(6)).choices[0].delta.content||""}catch(e){}}
+      el.innerHTML=md(bot.content);scroll();
+    }
+    addCopy(el);
+  }catch(err){bot.content="⚠️ صار خطأ: "+err.message;el.textContent=bot.content}
+  busy=false;$("#send").disabled=false;save();
+}
+$("#send").onclick=send;
+$("#in").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&innerWidth>760){e.preventDefault();send()}};
+$("#in").oninput=e=>{e.target.style.height="auto";e.target.style.height=e.target.scrollHeight+"px"};
+$("#new").onclick=()=>{cur=null;renderList();renderChat();$("#side").classList.remove("open")};
+renderList();renderChat();
+</script>
+</body>
+</html>
